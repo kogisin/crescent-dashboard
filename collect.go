@@ -31,7 +31,7 @@ type Pool struct {
 
 type LiquidStakingState struct {
 	MintRate     float64
-	BTokenSupply int64
+	BTokenSupply float64
 }
 
 type Collector struct {
@@ -52,6 +52,7 @@ type Collector struct {
 	numWithdrawReqs *prometheus.Desc
 	lastPrice       *prometheus.Desc
 	poolPrice       *prometheus.Desc
+	poolValue       *prometheus.Desc
 	mintRate        *prometheus.Desc
 	bTokenSupply    *prometheus.Desc
 	price           *prometheus.Desc
@@ -66,6 +67,7 @@ func NewCollector(grpcClient *client.GRPCClient, apiClient *client.APIClient) *C
 		numWithdrawReqs: prometheus.NewDesc("crescent_num_withdraw_requests", "Number of withdraw requests", []string{"pool_id"}, nil),
 		lastPrice:       prometheus.NewDesc("crescent_last_price", "Pair's last price", []string{"pair_id"}, nil),
 		poolPrice:       prometheus.NewDesc("crescent_pool_price", "Pool price", []string{"pool_id"}, nil),
+		poolValue:       prometheus.NewDesc("crescent_pool_value", "Pool value", []string{"pool_id"}, nil),
 		mintRate:        prometheus.NewDesc("crescent_mint_rate", "bToken mint rate", nil, nil),
 		bTokenSupply:    prometheus.NewDesc("crescent_btoken_supply", "bToken total supply", nil, nil),
 		price:           prometheus.NewDesc("crescent_price", "Coin price", []string{"denom"}, nil),
@@ -78,6 +80,7 @@ func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.numWithdrawReqs
 	ch <- c.lastPrice
 	ch <- c.poolPrice
+	ch <- c.poolValue
 	ch <- c.mintRate
 	ch <- c.bTokenSupply
 	ch <- c.price
@@ -102,6 +105,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 			ch <- prometheus.MustNewConstMetric(c.numDepositReqs, prometheus.GaugeValue, float64(pool.NumDepositRequests), strconv.FormatUint(pool.ID, 10))
 			ch <- prometheus.MustNewConstMetric(c.numWithdrawReqs, prometheus.GaugeValue, float64(pool.NumWithdrawRequests), strconv.FormatUint(pool.ID, 10))
 			ch <- prometheus.MustNewConstMetric(c.poolPrice, prometheus.GaugeValue, pool.Price, strconv.FormatUint(pool.ID, 10))
+			ch <- prometheus.MustNewConstMetric(c.poolValue, prometheus.GaugeValue, pool.Value, strconv.FormatUint(pool.ID, 10))
 		}
 	})
 	withRLock(&c.pricesMux, func() {
@@ -112,7 +116,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	withRLock(&c.lsStateMux, func() {
 		if c.lsState != nil {
 			ch <- prometheus.MustNewConstMetric(c.mintRate, prometheus.GaugeValue, c.lsState.MintRate)
-			ch <- prometheus.MustNewConstMetric(c.bTokenSupply, prometheus.GaugeValue, float64(c.lsState.BTokenSupply))
+			ch <- prometheus.MustNewConstMetric(c.bTokenSupply, prometheus.GaugeValue, c.lsState.BTokenSupply)
 		}
 	})
 }
@@ -174,7 +178,7 @@ func (c *Collector) UpdatePools(ctx context.Context) error {
 			if !ok {
 				return fmt.Errorf("price not found: %s", coin.Denom)
 			}
-			value += p * float64(coin.Amount.Int64()) // TODO: is it right type conversion?
+			value += p * (float64(coin.Amount.Int64()) / 1000000) // TODO: is it right type conversion?
 		}
 		c.pools[pool.Id] = Pool{
 			ID:                  pool.Id,
@@ -208,7 +212,7 @@ func (c *Collector) UpdateBTokenState(ctx context.Context) error {
 	}
 	c.lsState = &LiquidStakingState{
 		MintRate:     resp.NetAmountState.MintRate.MustFloat64(),
-		BTokenSupply: resp.NetAmountState.BtokenTotalSupply.Int64(),
+		BTokenSupply: float64(resp.NetAmountState.BtokenTotalSupply.Int64()) / 1000000,
 	}
 	return nil
 }
