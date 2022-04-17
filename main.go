@@ -87,7 +87,7 @@ Examples:
 					log.Printf("error: failed to update pools: %v", err)
 				}
 			})
-			launchPeriodicTask(2*time.Second, func() {
+			launchPeriodicTask(5*time.Second, func() {
 				if err := c.UpdatePrices(ctx); err != nil {
 					log.Printf("error: failed to update prices: %v", err)
 				}
@@ -95,6 +95,11 @@ Examples:
 			launchPeriodicTask(2*time.Second, func() {
 				if err := c.UpdateBTokenState(ctx); err != nil {
 					log.Printf("error: failed to update bToken state: %v", err)
+				}
+			})
+			launchPeriodicTask(5 * time.Second, func() {
+				if err := c.UpdateBalances(ctx); err != nil {
+					log.Printf("error: failed to update balances: %v", err)
 				}
 			})
 
