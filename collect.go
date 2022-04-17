@@ -198,6 +198,7 @@ func (c *Collector) UpdatePools(ctx context.Context) error {
 	c.poolsMux.Lock()
 	defer c.poolsMux.Unlock()
 	c.pools = map[uint64]Pool{}
+loop:
 	for _, pool := range resp.Pools {
 		pair, ok := c.pairs[pool.PairId]
 		if !ok {
@@ -209,7 +210,8 @@ func (c *Collector) UpdatePools(ctx context.Context) error {
 		for _, coin := range pool.Balances {
 			p, ok := c.prices[coin.Denom]
 			if !ok {
-				return fmt.Errorf("price not found: %s", coin.Denom)
+				//return fmt.Errorf("price not found: %s", coin.Denom)
+				continue loop
 			}
 			value += p * (float64(coin.Amount.Int64()) / 1000000) // TODO: is it right type conversion?
 		}
