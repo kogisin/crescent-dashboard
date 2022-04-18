@@ -8,17 +8,22 @@
 # Install using homebrew
 brew install prometheus
 
-# Config file location
-/opt/homebrew/etc/prometheus.yml
-
-# Binary location (prometheus, promtool, prometheus_brew_services)
-/opt/homebrew/opt/prometheus/bin
-
 # Start prometheus
 brew services start prometheus
 
+# Stop prometheus
+brew services stop prometheus
+
 # Restart prometheus
 brew services restart prometheus
+
+# Config file location
+# Homebrew v2: /usr/local/etc/prometheus.yml
+# Homebrew v3: /opt/homebrew/etc/prometheus.yml
+
+# Binary location (prometheus, promtool, prometheus_brew_services)
+# Homebrew v2: /usr/local/bin/prometheus
+# Homebrew v2: /opt/homebrew/opt/prometheus/bin
 ```
 
 ### Grafana
@@ -27,19 +32,27 @@ brew services restart prometheus
 # Install
 brew install grafana
 
+# Start
+brew services start grafana
+
+# Stop
+brew services stop grafana
+
+# Restart
+brew services restart grafana
+
 # Config file location
-/opt/homebrew/etc/grafana/grafana.ini
+# Homebrew v2: /usr/local/etc/grafana/grafana.ini
+# Homebrew v3: /opt/homebrew/etc/grafana/grafana.ini
 
 # Binary location (grafana-cli, grafana-server)
 # Homebrew v2: /usr/local/Cellar/grafana/[version]
 # Homebrew v3: /opt/homebrew/Cellar/grafana/[version]
-/opt/homebrew/Cellar/grafana/8.4.6/bin/
 
-# Start
-brew services start grafana
-
-# Restart
-brew services restart grafana
+# Debug if localhost:3000 web interface does not display dashboard
+# Monitor grafana proceess by running "$ps aux | grep grafana"
+# 1. Tailing log: tail -f /usr/local/var/log/grafana/grafana.log
+# 2. Try change port from default 3000 to 3001 and restart grafana
 ```
 
 ## Usage
@@ -55,7 +68,8 @@ brew services start grafana
 go run . mainnet.crescent.network:9090 https://apigw.crescent.network/
 
 # Add localhost:2112 to let prometheus to scrape custom metrics
-vim /opt/homebrew/etc/prometheus.yml
+vim /usr/local/etc/prometheus.yml (Homebrew v2)
+vim /opt/homebrew/etc/prometheus.yml (Homebrew v3)
 
 # 1. Go to Grafana client http://localhost:3000/login (admin/admin)
 # 2. Configuration -> Data Sources -> Add prometheus datasource http://localhost:9090 
